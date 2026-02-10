@@ -3,6 +3,7 @@
 # jsonify: to convert Python dictionaries to JSON responses
 # request: to access incoming request data (e.g., POST data)
 # abort: to handle errors and send error status codes
+# Import necessary modules from Flask
 from flask import Flask, jsonify, request, abort
 from flask_cors import CORS  # Enable Cross-Origin Resource Sharing for client apps
 
@@ -10,96 +11,198 @@ from flask_cors import CORS  # Enable Cross-Origin Resource Sharing for client a
 app = Flask(__name__)
 
 # Enable CORS so the HTML client can connect from a browser
-# This allows requests from different origins (e.g., file:// or another port)
 CORS(app)
 
+# ----------------------------
 # In-memory "database" of users
-# This list holds a set of user dictionaries. 
-# In a real-world application, this would be replaced by a database such as MySQL, PostgreSQL, or MongoDB.
+# ----------------------------
 users = [
     {"id": 1, "name": "Alice", "age": 25},
     {"id": 2, "name": "Bob", "age": 30},
 ]
 
-# Define route to handle requests to the root URL ('/')
+# ----------------------------
+# In-memory "database" of tasks (Required initial data)
+# ----------------------------
+tasks = [
+    {"id": 1, "title": "Learn REST", "description": "Study REST principles", "user_id": 1, "completed": True},
+    {"id": 2, "title": "Build API", "description": "Complete the assignment", "user_id": 2, "completed": False},
+]
+
+# ----------------------------
+# Helper functions
+# ----------------------------
+def user_exists(user_id: int) -> bool:
+    return any(u["id"] == user_id for u in users)
+
+def find_task(task_id: int):
+    return next((t for t in tasks if t["id"] == task_id), None)
+
+def get_next_task_id() -> int:
+    return max((t["id"] for t in tasks), default=0) + 1
+
+
+# ----------------------------
+# Basic routes
+# ----------------------------
 @app.route('/')
 def index():
     return "Welcome to Flask REST API Demo! Try accessing /users to see all users."
 
-# Health check route (GET)
-# This endpoint returns a 200 OK status and a JSON response to confirm that the service is running.
 @app.route('/health', methods=['GET'])
 def health_check():
-    return jsonify({"status": "healthy"}), 200  # Return HTTP status 200 OK
+    return jsonify({"status": "healthy"}), 200
 
-# Route to retrieve all users (GET request)
-# When the client sends a GET request to /users, this function will return a JSON list of all users.
-# The @ symbol in Python represents a decorator. 
-# In this case, @app.route is a Flask route decorator.
-# It is used to map a specific URL (route) to a function in your Flask application.
+
+# ----------------------------
+# USERS RESOURCE (existing)
+# ----------------------------
 @app.route('/users', methods=['GET'])
 def get_users():
-    return jsonify(users), 200  # 200 is the HTTP status code for 'OK'
+    return jsonify(users), 200
 
-# Route to retrieve a single user by their ID (GET request)
-# When the client sends a GET request to /users/<id>, this function will return the user with the specified ID.
 @app.route('/users/<int:user_id>', methods=['GET'])
 def get_user(user_id):
-    # Using a list comprehension to find the user by ID
     user = next((user for user in users if user['id'] == user_id), None)
     if user is None:
-        abort(404)  # If the user is not found, return a 404 error (Not Found)
-    return jsonify(user), 200  # Return the user as a JSON object with a 200 status code (OK)
+        abort(404)
+    return jsonify(user), 200
 
-# Route to create a new user (POST request)
-# When the client sends a POST request to /users with user data, this function will add the new user to the list.
 @app.route('/users', methods=['POST'])
 def create_user():
-    # If the request body is not in JSON format or if the 'name' field is missing, return a 400 error (Bad Request)
-    if not request.json or not 'name' in request.json:
+    if not request.json or 'name' not in request.json:
         abort(400)
-    
-    # Create a new user dictionary. Assign the next available ID by incrementing the highest current ID.
-    # If no users exist, the new ID will be 1.
+
     new_user = {
         'id': users[-1]['id'] + 1 if users else 1,
-        'name': request.json['name'],  # The name is provided in the POST request body
-        'age': request.json.get('age', 0)  # The age is optional; default is 0 if not provided
+        'name': request.json['name'],
+        'age': request.json.get('age', 0)
     }
-    # Add the new user to the users list
     users.append(new_user)
-    return jsonify(new_user), 201  # 201 is the HTTP status code for 'Created'
+    return jsonify(new_user), 201
 
-# Route to update an existing user (PUT request)
-# When the client sends a PUT request to /users/<id> with updated user data, this function will update the user.
 @app.route('/users/<int:user_id>', methods=['PUT'])
 def update_user(user_id):
-    # Find the user by their ID
     user = next((user for user in users if user['id'] == user_id), None)
     if user is None:
-        abort(404)  # If the user is not found, return a 404 error (Not Found)
-    
-    # If the request body is missing or not in JSON format, return a 400 error (Bad Request)
+        abort(404)
+
     if not request.json:
         abort(400)
-    
-    # Update the user's data based on the request body
-    # If a field is not provided in the request, keep the existing value
+
     user['name'] = request.json.get('name', user['name'])
     user['age'] = request.json.get('age', user['age'])
-    return jsonify(user), 200  # Return the updated user data with a 200 status code (OK)
+    return jsonify(user), 200
 
-# Route to delete a user (DELETE request)
-# When the client sends a DELETE request to /users/<id>, this function will remove the user with that ID.
 @app.route('/users/<int:user_id>', methods=['DELETE'])
 def delete_user(user_id):
-    global users  # Reference the global users list
-    # Rebuild the users list, excluding the user with the specified ID
+    global users
     users = [user for user in users if user['id'] != user_id]
-    return '', 204  # 204 is the HTTP status code for 'No Content', indicating the deletion was successful
+    return '', 204
+
+
+# ----------------------------
+# TASKS RESOURCE (Part 1)
+# ----------------------------
+@app.route('/tasks', methods=['GET'])
+def get_tasks():
+    return jsonify(tasks), 200
+
+@app.route('/tasks/<int:task_id>', methods=['GET'])
+def get_task(task_id):
+    task = find_task(task_id)
+    if task is None:
+        return jsonify({"error": "Task not found"}), 404
+    return jsonify(task), 200
+
+@app.route('/tasks', methods=['POST'])
+def create_task():
+    # Invalid JSON must return 400
+    data = request.get_json(silent=True)
+    if data is None:
+        return jsonify({"error": "Invalid JSON in request body"}), 400
+
+    title = data.get("title")
+    user_id = data.get("user_id")
+
+    # Missing required fields -> 400
+    if title is None or not str(title).strip():
+        return jsonify({"error": "Missing required field: title"}), 400
+    if user_id is None:
+        return jsonify({"error": "Missing required field: user_id"}), 400
+
+    # user_id must exist -> 400
+    if not isinstance(user_id, int):
+        return jsonify({"error": "user_id must be an integer"}), 400
+    if not user_exists(user_id):
+        return jsonify({"error": "Invalid user_id (user doesn't exist)"}), 400
+
+    new_task = {
+        "id": get_next_task_id(),
+        "title": str(title).strip(),
+        "description": str(data.get("description", "")),
+        "user_id": user_id,
+        "completed": bool(data.get("completed", False)),
+    }
+    tasks.append(new_task)
+    return jsonify(new_task), 201
+
+@app.route('/tasks/<int:task_id>', methods=['PUT'])
+def update_task(task_id):
+    task = find_task(task_id)
+    if task is None:
+        return jsonify({"error": "Task not found"}), 404
+
+    # Invalid JSON must return 400
+    data = request.get_json(silent=True)
+    if data is None:
+        return jsonify({"error": "Invalid JSON in request body"}), 400
+
+    # Update fields only if provided
+    if "title" in data:
+        if not str(data["title"]).strip():
+            return jsonify({"error": "title cannot be empty"}), 400
+        task["title"] = str(data["title"]).strip()
+
+    if "description" in data:
+        task["description"] = str(data["description"])
+
+    if "user_id" in data:
+        if not isinstance(data["user_id"], int):
+            return jsonify({"error": "user_id must be an integer"}), 400
+        if not user_exists(data["user_id"]):
+            return jsonify({"error": "Invalid user_id (user doesn't exist)"}), 400
+        task["user_id"] = data["user_id"]
+
+    if "completed" in data:
+        task["completed"] = bool(data["completed"])
+
+    return jsonify(task), 200
+
+@app.route('/tasks/<int:task_id>', methods=['DELETE'])
+def delete_task(task_id):
+    task = find_task(task_id)
+    if task is None:
+        return jsonify({"error": "Task not found"}), 404
+
+    tasks.remove(task)
+    return '', 204
+
+
+# ----------------------------
+# USER-TASKS ENDPOINT (Part 2)
+# ----------------------------
+@app.route('/users/<int:user_id>/tasks', methods=['GET'])
+def get_tasks_for_user(user_id):
+    # Return 404 if user does not exist
+    if not user_exists(user_id):
+        return jsonify({"error": "User not found"}), 404
+
+    # Return [] if user exists but has no tasks
+    user_tasks = [t for t in tasks if t["user_id"] == user_id]
+    return jsonify(user_tasks), 200
+
 
 # Entry point for running the Flask app
-# The app will run on host 0.0.0.0 (accessible on all network interfaces) and port 8000.
-# Debug mode is disabled (set to False).
 if __name__ == '__main__':
     app.run(debug=False, host='0.0.0.0', port=8000)
