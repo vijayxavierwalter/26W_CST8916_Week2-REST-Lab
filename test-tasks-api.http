@@ -1,0 +1,81 @@
+# 1 GET all tasks (200 with tasks array)
+GET http://localhost:8000/tasks
+Accept: application/json
+
+###
+
+# 2 GET a single task (200 with task object)
+GET http://localhost:8000/tasks/1
+Accept: application/json
+
+###
+
+# 3 GET a task that doesn't exist (404)
+GET http://localhost:8000/tasks/99999
+Accept: application/json
+
+###
+
+# 4 POST a new task (valid data) (201 with created task)
+POST http://localhost:8000/tasks
+Content-Type: application/json
+Accept: application/json
+
+{
+  "title": "Write tests",
+  "description": "Testing via REST Client",
+  "user_id": 1,
+  "completed": false
+}
+
+###
+
+# 5 POST a task with missing title (400)
+POST http://localhost:8000/tasks
+Content-Type: application/json
+Accept: application/json
+
+{
+  "description": "No title provided",
+  "user_id": 1,
+  "completed": false
+}
+
+###
+
+# 6 POST a task with invalid user_id (400)
+POST http://localhost:8000/tasks
+Content-Type: application/json
+Accept: application/json
+
+{
+  "title": "Bad user",
+  "description": "Invalid user_id test",
+  "user_id": 999,
+  "completed": false
+}
+
+###
+
+# 7 PUT to update a task (200 with updated task)
+PUT http://localhost:8000/tasks/2
+Content-Type: application/json
+Accept: application/json
+
+{
+  "title": "Build API UPDATED",
+  "description": "Now updated",
+  "user_id": 2,
+  "completed": true
+}
+
+###
+
+# 8 DELETE a task (204)
+DELETE http://localhost:8000/tasks/1
+
+###
+
+# 9 GET tasks for a specific user (200 with user's tasks)
+GET http://localhost:8000/users/2/tasks
+Accept: application/json
