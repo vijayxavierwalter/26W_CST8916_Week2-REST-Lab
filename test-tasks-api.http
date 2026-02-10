@@ -1,81 +1,82 @@
-# 1 GET all tasks (200 with tasks array)
+### 1. GET all tasks
+# Expected: 200 OK with an array containing the initial 2 tasks
 GET cst8916-rest-api-demo-h2d3f2hpadb3gmbp.canadacentral-01.azurewebsites.net/tasks
 Accept: application/json
 
 ###
 
-# 2 GET a single task (200 with task object)
+### 2. GET a single task
+# Expected: 200 OK with the task object for ID 1
 GET cst8916-rest-api-demo-h2d3f2hpadb3gmbp.canadacentral-01.azurewebsites.net/tasks/1
 Accept: application/json
 
 ###
 
-# 3 GET a task that doesn't exist (404)
-GET cst8916-rest-api-demo-h2d3f2hpadb3gmbp.canadacentral-01.azurewebsites.net/tasks/99999
+### 3. GET a task that doesn't exist
+# Expected: 404 Not Found
+GET cst8916-rest-api-demo-h2d3f2hpadb3gmbp.canadacentral-01.azurewebsites.net/tasks/999
 Accept: application/json
 
 ###
 
-# 4 POST a new task (valid data) (201 with created task)
+### 4. POST a new task (valid data)
+# Expected: 201 Created with the new task object (ID should be 3)
 POST cst8916-rest-api-demo-h2d3f2hpadb3gmbp.canadacentral-01.azurewebsites.net/tasks
 Content-Type: application/json
-Accept: application/json
 
 {
-  "title": "Write tests",
-  "description": "Testing via REST Client",
-  "user_id": 1,
-  "completed": false
+    "title": "Complete Assignment 1",
+    "description": "Finalize the Flask API extensions",
+    "user_id": 1,
+    "completed": false
 }
 
 ###
 
-# 5 POST a task with missing title (400)
+### 5. POST a task with missing title
+# Expected: 400 Bad Request
 POST cst8916-rest-api-demo-h2d3f2hpadb3gmbp.canadacentral-01.azurewebsites.net/tasks
 Content-Type: application/json
-Accept: application/json
 
 {
-  "description": "No title provided",
-  "user_id": 1,
-  "completed": false
+    "user_id": 1,
+    "description": "This request is missing the required title field"
 }
 
 ###
 
-# 6 POST a task with invalid user_id (400)
+### 6. POST a task with invalid user_id
+# Expected: 400 Bad Request (User 999 does not exist)
 POST cst8916-rest-api-demo-h2d3f2hpadb3gmbp.canadacentral-01.azurewebsites.net/tasks
 Content-Type: application/json
-Accept: application/json
 
 {
-  "title": "Bad user",
-  "description": "Invalid user_id test",
-  "user_id": 999,
-  "completed": false
+    "title": "Ghost Task",
+    "user_id": 999,
+    "completed": false
 }
 
 ###
 
-# 7 PUT to update a task (200 with updated task)
-PUT cst8916-rest-api-demo-h2d3f2hpadb3gmbp.canadacentral-01.azurewebsites.net/tasks/2
+### 7. PUT to update a task
+# Expected: 200 OK with the updated task object
+PUT cst8916-rest-api-demo-h2d3f2hpadb3gmbp.canadacentral-01.azurewebsites.net/tasks/1
 Content-Type: application/json
-Accept: application/json
 
 {
-  "title": "Build API UPDATED",
-  "description": "Now updated",
-  "user_id": 2,
-  "completed": true
+    "title": "Learn REST (Updated)",
+    "completed": false
 }
 
 ###
 
-# 8 DELETE a task (204)
-DELETE cst8916-rest-api-demo-h2d3f2hpadb3gmbp.canadacentral-01.azurewebsites.net/tasks/1
+### 8. DELETE a task
+# Expected: 204 No Content
+DELETE cst8916-rest-api-demo-h2d3f2hpadb3gmbp.canadacentral-01.azurewebsites.net/tasks/2
 
 ###
 
-# 9 GET tasks for a specific user (200 with user's tasks)
-GET cst8916-rest-api-demo-h2d3f2hpadb3gmbp.canadacentral-01.azurewebsites.net/users/2/tasks
+### 9. GET tasks for a specific user
+# Expected: 200 OK with an array of tasks belonging to User 1
+GET cst8916-rest-api-demo-h2d3f2hpadb3gmbp.canadacentral-01.azurewebsites.net/users/1/tasks
 Accept: application/json
